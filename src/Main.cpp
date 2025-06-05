@@ -14,20 +14,20 @@ REFLECT_END()
 
 int main(int argc, char* argv[])
 {
-  Foo foo{ 10, 2 };
+  
 
-  //Field<Foo, int>(nullptr, "");
+  Foo foo{ 10, 2 };
 
 	auto fields{ Reflect<Foo>::GetFields() };
   auto& field = std::get<0>(fields);
 
-  field.SetValue(foo, 20); //Work
+  field.Set(foo, 20); //Work
 
   std::cout << field.GetName() << '\n'; //Work
 
   std::apply([&foo](const auto& ...args_)
     {
-      ((std::cout << args_.GetValue(foo) << '\n'), ...); //Vietnam mais work
+      ((std::cout << args_.Get(foo) << '\n'), ...); //Vietnam mais work
     }, Reflect<Foo>::GetFields());
 
   return 0;
