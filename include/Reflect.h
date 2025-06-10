@@ -67,25 +67,25 @@ private:
 public:
   [[nodiscard]] consteval static std::string_view GetClassName() { return s_reflectedClassName; }
   [[nodiscard]] consteval static auto& GetFields() { return s_fieldArray; }
-  [[nodiscard]] consteval static auto& GetFieldByName(std::string_view name_)
-  {
-    return GetFieldByName_impl<0>(name_);
-  }
+  //[[nodiscard]] consteval static auto& GetFieldByName(std::string_view name_)
+  //{
+  //  return GetFieldByName_impl<0>(name_);
+  //}
 
 private:
-  template<size_t Index>
-  consteval static auto& GetFieldByName_impl(std::string_view name_)
-  {
-  	static_assert(std::tuple_size_v<decltype(s_fieldArray)> > Index, "The field has not been found.");
+  //template<size_t Index>
+  //consteval static auto& GetFieldByName_impl(std::string_view name_)
+  //{
+  //	static_assert(std::tuple_size_v<decltype(s_fieldArray)> > Index, "The field has not been found.");
 
-    constexpr auto& field = std::get<Index>(s_fieldArray);
-    if constexpr (field.GetName() == name_)
-    {
-      return field;
-    }
+  //  constexpr auto& field = std::get<Index>(s_fieldArray);
+  //  if constexpr (field.GetName() == name_)
+  //  {
+  //    return field;
+  //  }
 
-    return GetFieldByName_impl<Index + 1>(name_);
-  }
+  //  return GetFieldByName_impl<Index + 1>(name_);
+  //}
 };
 
 #define REFLECT_BEGIN(ClassType)																  \
