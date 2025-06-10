@@ -10,6 +10,16 @@ struct Bar
   int myInt;
 };
 
+template<size_t Size>
+struct CompileString
+{
+	constexpr CompileString(const char(&str_)[Size]) noexcept
+		: constStr(str_)
+	{}
+
+	const char* constStr;
+};
+
 template<class ClassT>
 struct Reflect;
 
@@ -67,25 +77,28 @@ private:
 public:
   [[nodiscard]] consteval static std::string_view GetClassName() { return s_reflectedClassName; }
   [[nodiscard]] consteval static auto& GetFields() { return s_fieldArray; }
-  //[[nodiscard]] consteval static auto& GetFieldByName(std::string_view name_)
-  //{
-  //  return GetFieldByName_impl<0>(name_);
-  //}
+
+	template<CompileString Name>
+  [[nodiscard]] consteval static auto& GetFieldByName()
+  {
+    return GetFieldByName_impl<Name.constStr, 0>();
+  }
 
 private:
-  //template<size_t Index>
-  //consteval static auto& GetFieldByName_impl(std::string_view name_)
-  //{
-  //	static_assert(std::tuple_size_v<decltype(s_fieldArray)> > Index, "The field has not been found.");
+	//Je ne peux pas changer de valeurs de retour par magie j'ai besoin d'un nouveau parametre de template pour diff  
+  template<CompileString Name, size_t Index>
+  consteval static auto& GetFieldByName_impl()
+  {
+  	static_assert(std::tuple_size_v<decltype(s_fieldArray)> > Index, "The field has not been found.");
 
-  //  constexpr auto& field = std::get<Index>(s_fieldArray);
-  //  if constexpr (field.GetName() == name_)
-  //  {
-  //    return field;
-  //  }
+    constexpr auto& field = std::get<Index>(s_fieldArray);
+    if constexpr (field.GetName() == Name.constStr)
+    {
+      return field;
+    }
 
-  //  return GetFieldByName_impl<Index + 1>(name_);
-  //}
+    return GetFieldByName_impl<Name.constStr, Index + 1>();
+  }
 };
 
 #define REFLECT_BEGIN(ClassType)																  \

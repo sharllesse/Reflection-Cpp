@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
       ((std::cout << args_.Get(foo) << '\n'), ...); //Vietnam mais work
     }, Reflect<Foo>::GetFields());
 
-	//auto field2 = Reflect<Bar>::GetFieldByName("myInt");
+	auto field2 = Reflect<Bar>::GetFieldByName<"myInt">();
 
   return 0;
 }
