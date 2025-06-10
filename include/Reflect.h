@@ -11,11 +11,7 @@ struct Bar
 };
 
 template<class ClassT>
-struct Reflect
-{
-  constexpr static std::string_view GetClassName();
-  constexpr static auto& GetFields();
-};
+struct Reflect;
 
 //Besoin de check si le fieldPtr_ n'est pas nullptr. a la compilation.
 //Changer tout les parametres par des template non-typer.
@@ -71,20 +67,25 @@ private:
 public:
   [[nodiscard]] consteval static std::string_view GetClassName() { return s_reflectedClassName; }
   [[nodiscard]] consteval static auto& GetFields() { return s_fieldArray; }
-  [[nodiscard]] constexpr static auto& GetField(std::string_view name)
+  [[nodiscard]] consteval static auto& GetFieldByName(std::string_view name_)
   {
-    return GetField_impl(name, std::make_index_sequence<std::tuple_size_v<decltype(s_fieldArray)>>{});
+    return GetFieldByName_impl<0>(name_);
   }
 
 private:
-    template<size_t... Size>
-    constexpr static auto& GetField_impl(std::string_view name, std::index_sequence<Size...>)
-    {
-      std::optional<auto> value;
-      ((std::get<Size>(s_fieldArray).GetName() == name && (value = std::get<Size>(s_fieldArray), true)) || ...);
+  template<size_t Index>
+  consteval static auto& GetFieldByName_impl(std::string_view name_)
+  {
+  	static_assert(std::tuple_size_v<decltype(s_fieldArray)> > Index, "The field has not been found.");
 
-      return value;
+    constexpr auto& field = std::get<Index>(s_fieldArray);
+    if constexpr (field.GetName() == name_)
+    {
+      return field;
     }
+
+    return GetFieldByName_impl<Index + 1>(name_);
+  }
 };
 
 #define REFLECT_BEGIN(ClassType)																  \
