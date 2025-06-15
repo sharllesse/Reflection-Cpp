@@ -4,44 +4,58 @@
 #include <string_view>
 #include <tuple>
 #include <optional>
+#include <algorithm>
 
 struct Bar
 {
   int myInt;
+  float myFloat;
 };
 
-template<size_t Size>
+template <size_t Size>
 struct CompileString
 {
-	constexpr CompileString(const char(&str_)[Size]) noexcept
-		: constStr(str_)
-	{}
+  static constexpr size_t s_size{ Size };
 
-	const char* constStr;
+  char m_buffer[Size]{};
+
+  consteval CompileString(const char(&str_)[Size]) noexcept {
+    std::copy_n(str_, Size, m_buffer);
+  }
+
+  consteval operator const char* () const noexcept {
+    return m_buffer;
+  }
+
+  template <size_t OtherSize>
+  consteval bool
+    operator==(const CompileString<OtherSize>& other) const noexcept {
+    if constexpr (Size != OtherSize) {
+      return false;
+    }
+
+    for (size_t i = 0; i < Size; ++i) {
+      if (m_buffer[i] != other.m_buffer[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 };
 
-template<class ClassT>
+template <class ClassT>
 struct Reflect;
 
-//Besoin de check si le fieldPtr_ n'est pas nullptr. a la compilation.
-//Changer tout les parametres par des template non-typer.
-
-template<class ClassT, typename FieldT, FieldT ClassT::* FieldPtr>
+template<class ClassT, typename FieldT, FieldT ClassT::* FieldPtr, CompileString FieldName>
 struct Field
 {
   static_assert(FieldPtr != nullptr, "FieldPtr cannot be nullptr.");
+  static_assert(FieldName != "", "FieldName cannot be empty.");
 
-private:
   constexpr Field() = default;
-
-public:
   constexpr Field(const Field&) = default;
   constexpr Field(Field&&) noexcept = default;
-
-  constexpr explicit Field(std::string_view fieldName_)
-    : m_fieldName(fieldName_)
-  {
-  }
 
   constexpr ~Field() = default;
 
@@ -58,47 +72,61 @@ public:
   template<typename ValueT>
   constexpr void Set(ClassT& class_, ValueT&& value_) { class_.*s_fieldPtr = std::forward<ValueT>(value_); }
 
-  [[nodiscard]] constexpr std::string_view GetName() const { return m_fieldName; }
+  [[nodiscard]] constexpr std::string_view GetName() const { return std::string_view{ s_fieldName.m_buffer }; }
+
+  static consteval auto GetStaticName() { return s_fieldName; }
 private:
   static constexpr auto s_fieldPtr{ FieldPtr };
-
-  std::string_view m_fieldName;
+  static constexpr auto s_fieldName{ FieldName };
 };
 
 template<>
 struct Reflect<Bar>
 {
-private:
   using Type = Bar;
 
-  constexpr static std::string_view s_reflectedClassName{ "Bar" };
+  [[nodiscard]] static consteval std::string_view GetClassName() { return s_reflectedClassName; }
+  [[nodiscard]] static consteval auto GetFields() { return s_fieldArray; }
 
-  constexpr static auto s_fieldArray{ std::make_tuple(Field<Bar, decltype(Type::myInt), &Type::myInt>("myInt")) };
-public:
-  [[nodiscard]] consteval static std::string_view GetClassName() { return s_reflectedClassName; }
-  [[nodiscard]] consteval static auto& GetFields() { return s_fieldArray; }
-
-	template<CompileString Name>
-  [[nodiscard]] consteval static auto& GetFieldByName()
+  template<CompileString Name>
+  [[nodiscard]] static consteval auto GetFieldByName()
   {
-    return GetFieldByName_impl<Name.constStr, 0>();
+    return GetFieldByName_impl<Name, 0>();
+  }
+
+  template<typename Visitor>
+  static constexpr void ForEachFields(Visitor&& visitor_)
+  {
+    ForEachFields_impl(std::forward<Visitor>(visitor_), std::make_index_sequence<std::tuple_size_v<decltype(s_fieldArray)>>{});
   }
 
 private:
-	//Je ne peux pas changer de valeurs de retour par magie j'ai besoin d'un nouveau parametre de template pour diff  
   template<CompileString Name, size_t Index>
-  consteval static auto& GetFieldByName_impl()
+  static consteval auto GetFieldByName_impl()
   {
-  	static_assert(std::tuple_size_v<decltype(s_fieldArray)> > Index, "The field has not been found.");
+    static_assert(std::tuple_size_v<decltype(s_fieldArray)> > Index, "The field has not been found.");
+    static_assert(Index >= 0, "The field has not been found.");
 
-    constexpr auto& field = std::get<Index>(s_fieldArray);
-    if constexpr (field.GetName() == Name.constStr)
+    constexpr auto field = std::get<Index>(s_fieldArray);
+    if constexpr (std::decay_t<decltype(field)>::GetStaticName() == Name)
     {
       return field;
     }
-
-    return GetFieldByName_impl<Name.constStr, Index + 1>();
+    else 
+    {
+      return GetFieldByName_impl<Name, Index + 1>();
+    }
   }
+
+  template<typename Visitor, size_t ...Index>
+  static constexpr void ForEachFields_impl(Visitor&& visitor_, std::index_sequence<Index...>)
+  {
+    (visitor_(std::get<Index>(s_fieldArray)), ...);
+  }
+
+  static constexpr std::string_view s_reflectedClassName{ "Bar" };
+
+  static constexpr auto s_fieldArray{ std::make_tuple(Field<Bar, decltype(Type::myFloat), &Type::myFloat, "myFloat">(), Field<Bar, decltype(Type::myInt), &Type::myInt, "myInt">()) };
 };
 
 #define REFLECT_BEGIN(ClassType)																  \
@@ -118,7 +146,7 @@ private:																						  \
   constexpr static auto s_fieldArray{ std::make_tuple(											  \
 
 #define REFLECT_FIELD(Variable)									  \
-Field<Type, decltype(Type::Variable), &Type::Variable>(#Variable) \
+Field<Type, decltype(Type::Variable), &Type::Variable, #Variable>() \
 
 #define REFLECT_END() \
 	) };		      \

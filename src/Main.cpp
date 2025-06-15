@@ -1,6 +1,9 @@
 #include "Pch.h"
 #include "Reflect.h"
 
+#include <concepts>
+#include <memory>
+
 struct Foo
 {
   int myInt;
@@ -8,8 +11,8 @@ struct Foo
 };
 
 REFLECT_BEGIN(Foo)
-	REFLECT_FIELD(myInt),
-	REFLECT_FIELD(otherInt)
+  REFLECT_FIELD(myInt),
+  REFLECT_FIELD(otherInt)
 REFLECT_END()
 
 int main(int argc, char* argv[])
@@ -28,7 +31,12 @@ int main(int argc, char* argv[])
       ((std::cout << args_.Get(foo) << '\n'), ...); //Vietnam mais work
     }, Reflect<Foo>::GetFields());
 
-	auto field2 = Reflect<Bar>::GetFieldByName<"myInt">();
+  auto field2 = Reflect<Bar>::GetFieldByName<"myFloat">();
+
+  Reflect<Bar>::ForEachFields([](const auto& arg_)
+    {
+      std::cout << arg_.GetName() << '\n';
+    });
 
   return 0;
 }
