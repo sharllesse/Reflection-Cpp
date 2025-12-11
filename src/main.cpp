@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-//The reflection system doesn't work with const function and I think it is because of the const propagation.
-//And I did not test it with static, but I'm sure it does not work since static member are not called in the same way as a normal one.
+//The reflection system doesn't work with the const function and I think it is because of the const propagation.
+//And I did not test it with static, but I'm sure it does not work since static members are not called in the same way as a normal one.
 
 class foo_bar
 {
