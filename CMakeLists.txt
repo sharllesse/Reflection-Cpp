@@ -1,21 +1,20 @@
 cmake_minimum_required(VERSION 3.29)
 
-project(Reflection_C++)
+project(Reflection_Cpp)
 
 add_executable(${CMAKE_PROJECT_NAME})
 
 target_sources(${CMAKE_PROJECT_NAME} 
     PRIVATE 
-        "src/Main.cpp"
-        "src/Reflect.cpp"
-        "include/Reflect.h"
-        "pch/Pch.h")
+        "src/main.cpp"
+        "include/reflect.h"
+        "include/variable_field.h"
+        "include/function_field.h"
+        "include/compile_string.h"
+)
 
 target_include_directories(${CMAKE_PROJECT_NAME} 
     PRIVATE
-        "include"
-        "pch")
+        "include")
 
 target_compile_features(${CMAKE_PROJECT_NAME} PRIVATE cxx_std_23)
-
-target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE "pch/Pch.h")
