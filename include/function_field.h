@@ -1,5 +1,5 @@
-﻿#ifndef REFLECTION_C_FUNCTION_FIELD_H
-#define REFLECTION_C_FUNCTION_FIELD_H
+﻿#ifndef REFLECTION_CPP_FUNCTION_FIELD_H
+#define REFLECTION_CPP_FUNCTION_FIELD_H
 
 #include "compile_string.h"
 
@@ -51,4 +51,4 @@ public:
     }
 };
 
-#endif //REFLECTION_C_FUNCTION_FIELD_H
+#endif //REFLECTION_CPP_FUNCTION_FIELD_H
